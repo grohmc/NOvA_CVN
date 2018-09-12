@@ -1,3 +1,7 @@
+'''
+Keras model of CVN. Adapted from:
+https://cdcvs.fnal.gov/redmine/projects/novaart/repository/entry/trunk/CVN/training/prototxt/Evt_FD_short_simple_train.prototxt
+'''
 from keras.models import Model
 from keras.layers import *
 

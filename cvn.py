@@ -1,3 +1,6 @@
+'''
+Simple functions for working with pixel maps, training models, and making predictions.
+'''
 import pandas as pd
 import numpy as np
 
@@ -27,9 +30,12 @@ if __name__ == '__main__':
     parser.add_argument('command',metavar='<command>',help='train or view')
     args=parser.parse_args()
 
+    # Train the model
     if args.command == 'train':
         config = novaConfig()
+        config.display()
 
+        # Create the tables object. Select out true neutrinos
         tables = h5Utils.importh5(config.input_file)
         df = pmUtils.trainingdf(tables,nuCut(tables))
 
@@ -42,6 +48,7 @@ if __name__ == '__main__':
         opt = SGD(lr=config.learning_rate, momentum=config.momentum, decay=config.decay_rate, nesterov=False)
         model.compile(loss='categorical_crossentropy',optimizer=opt,metrics=['acc','top_k_categorical_accuracy'])
 
+        # Go go go
         history = model.fit_generator(generator=train_generator,
                                       steps_per_epoch=config.train_iterations,
                                       validation_data=val_generator,
@@ -51,35 +58,42 @@ if __name__ == '__main__':
                                       verbose=1,
                                       workers=1)
 
+        # Save the output
         directory = config.out_directory
         if not os.path.exists(directory):
             os.makedirs(directory)
 
         model.save(directory + config.weights_name + '.h5')
 
+    # Make some predictions
     if args.command == 'predict':
         config = novaConfig()
 
+        # make the tables object. Predict on a fraction of them
         tables = h5Utils.importh5(config.input_file)
         df = pmUtils.trainingdf(tables,nuCut(tables))
         df = df.sample(frac=0.2)
 
+        # Load the model weights
         directory = config.out_directory
         model = load_model(directory + config.weights_name + '.h5')
 
         maps = pmUtils.pmdftonp(df.cvnmap)
         cats = df.intcat.values
 
+        # Just print things to screen
         for cat,map in zip(cats,maps):
             probs = model.predict([[map[0]],[map[1]]])
             print(cat,probs)
 
+    # Store pixelmaps in hist2s
     if args.command == 'viewdata':
         config = novaConfig()
 
         tables = h5Utils.importh5(config.input_file)
         pmUtils.viewmap(tables,nuCut(tables))
 
+    # Make a visual od the compiled model
     if args.command == 'viewmodel':
         config = novaConfig()
 

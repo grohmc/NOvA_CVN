@@ -1,4 +1,7 @@
-
+'''
+Default config file for changing settings when training a model
+Use this as a base class for specialized training
+'''
 class Config(object):
     # number of samples in each iteration
     batch_size       = 16
@@ -36,6 +39,7 @@ class Config(object):
     # name of the file to store weights in
     weights_name     = 'nova_weights'
 
+    # Display the config
     def display(self):
         print("\nConfigurations:")
         for a in dir(self):
