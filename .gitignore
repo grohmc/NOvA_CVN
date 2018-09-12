@@ -1,0 +1,5 @@
+*.pyc
+*.ipynb
+*.h5
+*.hdf5
+*.log
