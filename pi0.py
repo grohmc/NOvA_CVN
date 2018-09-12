@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import rc
 rc('text', usetex=True)
-from matplotlib.patches import Rectangle
 
 def twoprong(tables):
     df = tables['rec.vtx.elastic.fuzzyk']
@@ -57,10 +56,8 @@ dfBkg = kMass(tables)[cutBkg]
 
 plt.figure(1,figsize=(6,4))
 a,bins,_ = plt.hist([dfBkg, dfSig], 10, (0,300),\
-                        histtype='step', color=['b','r'], stacked=True,\
-                        label=['a','b'])
-
-f=plt.fill_between(bins[:-1],0,a[0],step='post')
+                        histtype='barstacked', color=['b','r'], stacked=True,\
+                        label=['Background','$\pi^0$ Signal'])
 
 plt.legend(loc='upper right')
 
