@@ -9,14 +9,14 @@ def H1D(data, groupkey, varkey, title='title', xname='x', yname='y'):
     k2=varkey
     h   = plt
     fig = h.figure(1,(6,4))
-    ax  = fig.add_subplot()
+    # ax  = fig.subplot()
     h.hist(data, color='hotpink', alpha=0.5, label=k1)
     h.title(title)
     h.grid(True)
-    h.xlabel(xname)
-    h.ylabel(yname)
+    h.xlabel(xname,fontsize= 14)
+    h.ylabel(yname,fontsize= 14)
     h.legend(loc='upper right')
-    h.text(0.5, 0.5, 'matplotlib', horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+    h.text(0.99, 1.03, 'NOvA Simulation', fontsize= 14, horizontalalignment='right', verticalalignment='center', transform=h.gca().transAxes)
     h.show()
     # h.savefig('all/'+k1+'.'+k2+'.png')
     h.close()
