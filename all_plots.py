@@ -11,8 +11,8 @@ def H1D(groupkey, varkey, data):
     h.figure(1,(7,4))
     h.hist(data, label='la', color='hotpink',alpha=0.5)
     h.title(k1+'.'+k2)
-    h.show()
     h.legend(loc='upper right')
+    h.show()
     #h.savefig('all/'+k1+'.'+k2+'.png')
     h.close()
 
