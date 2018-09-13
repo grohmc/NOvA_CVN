@@ -7,10 +7,11 @@ tables = h5Utils.importh5('fardet_genie_nonswap_genierw_fhc_v08_1000_r00014041_s
 def H1D(groupkey, varkey, data):
     k1=groupkey
     k2=varkey
-    plt.figure(1,(6,4))
-    plt.hist(data)
+    plt.figure(1,(7,4))
+    plt.hist(data, color='hotpink',alpha=0.5)
     plt.title(k1+'.'+k2)
-    plt.savefig('all/'+k1+'.'+k2+'.png')
+    plt.show()
+    #plt.savefig('all/'+k1+'.'+k2+'.png')
     plt.close()
     
 for k1 in tables.keys():
@@ -25,4 +26,4 @@ for k1 in tables.keys():
         data = df[k2]
 
         data = data[(data==data) & (data < 1E10) & (data > -1E10)]
-        h5Utils.H1D(k1, k2, data)
+        H1D(k1, k2, data)
