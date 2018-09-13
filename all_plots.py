@@ -7,16 +7,19 @@ tables = h5Utils.importh5('fardet_genie_nonswap_genierw_fhc_v08_1000_r00014041_s
 def H1D(data, groupkey, varkey, title='title', xname='x', yname='y'):
     k1=groupkey
     k2=varkey
-    plt.figure(1,(6,4))
-    plt.hist(data, color='hotpink', alpha=0.5, label=k1)
-    plt.title(title)
-    plt.grid(True)
-    plt.xlabel(xname)
-    plt.ylabel(yname)
-    plt.legend(loc='upper right')
-    plt.show()
-    # plt.savefig('all/'+k1+'.'+k2+'.png')
-    plt.close()
+    h   = plt
+    fig = h.figure(1,(6,4))
+    ax  = fig.add_subplot()
+    h.hist(data, color='hotpink', alpha=0.5, label=k1)
+    h.title(title)
+    h.grid(True)
+    h.xlabel(xname)
+    h.ylabel(yname)
+    h.legend(loc='upper right')
+    h.text(0.5, 0.5, 'matplotlib', horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+    h.show()
+    # h.savefig('all/'+k1+'.'+k2+'.png')
+    h.close()
 
 for k1 in tables.keys():
     df = tables[k1]
