@@ -4,17 +4,19 @@ import matplotlib.pyplot as plt
 tables = h5Utils.importh5('fardet_genie_nonswap_genierw_fhc_v08_1000_r00014041_s60_c000_R17-11-14-prod4reco.h5')
 
 # Make plots from data tables
-def H1D(groupkey, varkey, data):
+def H1D(data, groupkey, varkey, title='title', xname='x', yname='y'):
     k1=groupkey
     k2=varkey
-    h = plt
-    h.figure(1,(7,4))
-    h.hist(data, label='la', color='hotpink',alpha=0.5)
-    h.title(k1+'.'+k2)
-    h.legend(loc='upper right')
-    h.show()
-    #h.savefig('all/'+k1+'.'+k2+'.png')
-    h.close()
+    plt.figure(1,(6,4))
+    plt.hist(data, color='hotpink', alpha=0.5, label=k1)
+    plt.title(title)
+    plt.grid(True)
+    plt.xlabel(xname)
+    plt.ylabel(yname)
+    plt.legend(loc='upper right')
+    plt.show()
+    # plt.savefig('all/'+k1+'.'+k2+'.png')
+    plt.close()
 
 for k1 in tables.keys():
     df = tables[k1]
@@ -30,4 +32,4 @@ for k1 in tables.keys():
         data = df[k2]
 
         data = data[(data==data) & (data < 1E10) & (data > -1E10)]
-        H1D(k1, k2, data)
+        H1D(data, k1, k2, ' ', 'Calorimetric Energy [GeV]')
