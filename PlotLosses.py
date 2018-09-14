@@ -8,12 +8,12 @@ import numpy as np
 parser = argparse.ArgumentParser()
 parser.add_argument('command', metavar='<command>', help='input log file')
 args = parser.parse_args()
-log=args.command
+log = args.command
 
 def extractLoss(logPath):
     iter = []
     loss = []
-    acc  = []  
+    acc  = []
 
     eiter = []
     tloss = []
