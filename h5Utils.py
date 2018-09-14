@@ -41,6 +41,12 @@ def importh5(h5_path):
     f.close()
 
     return tables
+
+def getIndices(tables):
+    df = tables['rec.slc']
+    indices = df.index.values
+    return pd.DataFrame(indices,columns=['index'])
+
 '''
 def importh5s(h5_path):
     fnames = glob(os.path.join(h5_path, "**.h5"))
