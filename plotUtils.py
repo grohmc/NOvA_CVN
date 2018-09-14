@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
 #####################################
 # Make plots from data tables
 #####################################
@@ -22,5 +25,11 @@ def plt_1D(data, groupkey, varkey, title='title', xname='x', yname=' '):
 
     return n, bins
 
-def integral(n, bins):
-    return sum(np.diff(bins[bin1:bin2])*n[bin1:bin2]) 
+# compute the integral given hist contents and bin boundaries
+def integral(n, bins, range=None, width=False):
+    if not range:
+        range=(0,len(bins))
+    if width:
+        return (np.diff(bins[slice(*range)])*n[slice(*range)]).sum()
+    else:
+        return n[slice(*range)].sum()
