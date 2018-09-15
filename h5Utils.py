@@ -32,10 +32,9 @@ def importh5(h5_path):
             values[k2] = dataset
         df = pd.DataFrame(values)
         # Hack. These trees don't have events or slices
-        if k1.startswith('spill') or k1.startswith('neutrino'):
-            continue
-        # Index the data
-        df.set_index(KL, inplace=True)
+        if not (k1.startswith('spill') or k1.startswith('neutrino')):
+            # Index the data
+            df.set_index(KL, inplace=True)
         tables[k1] = df
 
     f.close()
