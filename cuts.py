@@ -48,36 +48,3 @@ def kNuPdg(tables):
 def kNuInt(tables):
     df = tables['rec.mc.nu']
     return df['mode'] # mode is panda internal function. Awkward...
-
-######################################################################################
-
-def twoprong(tables):
-    df = tables['rec.vtx.elastic.fuzzyk']
-    df['twoprong'] = (df.npng == 2)
-    return df.twoprong.groupby(KL).agg(np.any)
-
-def kGammaCut(tables):
-    df = tables['rec.vtx.elastic.fuzzyk.png.cvnpart']
-    df['isphoton'] = (df.photonid > 0.5)
-    return df.isphoton.groupby(KL).agg(np.all)
-
-def kTruePi0(tables):
-    df = tables['rec.sand.nue']
-    return (df.npi0 > 0)
-
-def kMass(tables):
-    df = tables['rec.vtx.elastic.fuzzyk.png']
-    x = df['dir.x']
-    y = df['dir.y']
-    z = df['dir.z']
-
-    l = np.sqrt(x*x+y*y+z*z)
-    x=x/l
-    y=y/l
-    z=z/l
-
-    dot = x.groupby(KL).prod()+y.groupby(KL).prod()+z.groupby(KL).prod()
-
-    EProd = df.calE.groupby(KL).prod()
-
-    return 1000*np.sqrt(2*EProd*(1-dot))
