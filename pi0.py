@@ -83,7 +83,7 @@ plt.ylabel('Events')
 # There must be a more direct way to do this.
 d,_ = np.histogram(dfData,bins)
 centers = (bins[:-1] + bins[1:])/2
-plt.errorbar(centers,d, yerr=np.sqrt(d), fmt='ko', label='Fake Data')
+plt.errorbar(centers, d, yerr=np.sqrt(d), fmt='ko', label='Fake Data')
 
 plt.legend(loc='upper right')
 
