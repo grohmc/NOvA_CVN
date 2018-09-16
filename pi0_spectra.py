@@ -1,5 +1,5 @@
 import h5Utils
-from plotUtils import integral
+from core import cut, spectrum
 
 import numpy as np
 import pandas as pd
@@ -64,33 +64,36 @@ def kMass(tables):
 
 tables = h5Utils.importh5('neardet_genie_nonswap_genierw_fhc_v08_1535_r00010921_s02_c002_R17-11-14-prod4reco.d_v1_20170322_204739_sim.repid.root.hdf5')
 
-cut = twoprong(tables) & kGammaCut(tables) & kContain(tables)
-cutBkg = cut & ~kTruePi0(tables)
+cutTot = cut(twoprong) & cut(kGammaCut) & cut(kContain)
+cutBkg = cutTot & ~cut(kTruePi0)
 
-dfData = kMass(tables)[cut]
-dfTot = kMass(tables)[cut]
-dfBkg = kMass(tables)[cutBkg]
+data = spectrum(kMass, cutTot, tables)
+tot = spectrum(kMass, cutTot, tables)
+bkg = spectrum(kMass, cutBkg, tables)
+
+POT=9E20
+
+print('Found ' + str(data.POT()) + ' POT. Scaling to ' + str(POT) + ' POT.')
+
+inttot = tot.integral(POT=POT)
+intbkg = bkg.integral(POT=POT)
+pur = (inttot - intbkg) / inttot
+print('This selection has a pi0 purity of ' + str(pur))
+
+d, bins = data.histogram(10,(0,300), POT=POT)
+m, _    = tot.histogram(10,(0,300), POT=POT)
+b, _    = bkg.histogram(10,(0,300), POT=POT)
+
+plt.bar(bins[:-1],m, color='xkcd:red', width=np.diff(bins), align='edge', label='$\pi^0$ Signal')
+plt.bar(bins[:-1],b, color='xkcd:dark blue', width=np.diff(bins), align='edge', label='Background')
+
+centers = (bins[:-1] + bins[1:])/2
+plt.errorbar(centers, d, fmt='ko', label='Fake Data')
 
 plt.figure(1,figsize=(6,4))
-
-# could use np.histogram to get these values, but we are plotting anyway so grab them here
-tot,bins,_ = plt.hist(dfTot, 10, (0,300), color='xkcd:red', label='$\pi^0$ Signal', histtype='step')
-bkg,_,_    = plt.hist(dfBkg, bins, color='xkcd:dark blue', label='Background')
-
 plt.xlabel('M$_{\gamma\gamma}$')
 plt.ylabel('Events')
 
-# There must be a more direct way to do this.
-d,_ = np.histogram(dfData,bins)
-centers = (bins[:-1] + bins[1:])/2
-plt.errorbar(centers, d, yerr=np.sqrt(d), fmt='ko', label='Fake Data')
-
 plt.legend(loc='upper right')
-
-inttot = integral(tot, bins)
-intbkg = integral(bkg, bins)
-
-pur = (inttot-intbkg) / inttot
-print('This selection has a pi0 purity of ' + str(pur))
 
 plt.show()

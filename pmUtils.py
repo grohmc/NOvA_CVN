@@ -14,10 +14,10 @@ def cvnmap(tables):
 # creates a dataframe with neutrino flavor category
 def intcat(tables):
     df=tables['rec.mc.nu']
-    df.loc[(df.iscc==1) & (np.abs(df.pdg)==12),'intcat'] = 1
-    df.loc[(df.iscc==1) & (np.abs(df.pdg)==14),'intcat'] = 2
-    df.loc[(df.iscc==1) & (np.abs(df.pdg)==16),'intcat'] = 3
-    df.loc[df.iscc==0,'intcat'] = 4
+    df.loc[(df.iscc==1) & (np.abs(df.pdg)==12),'intcat'] = 0
+    df.loc[(df.iscc==1) & (np.abs(df.pdg)==14),'intcat'] = 1
+    df.loc[(df.iscc==1) & (np.abs(df.pdg)==16),'intcat'] = 2
+    df.loc[df.iscc==0,'intcat'] = 3
 
     return df.intcat.astype(np.uint8)
 
@@ -29,7 +29,7 @@ def trainingdf(tables,cut):
     df = pd.concat([cat,pm], axis=1)
     df = df[df.cvnmap == df.cvnmap] # remove empty pixel maps
 
-    return df.fillna(0)
+    return df.fillna(4)
 
 # Convert a pixelmap from a dataframe to the correctly shaped numpy array
 def pmdftonp(df):
