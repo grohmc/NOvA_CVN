@@ -1,3 +1,7 @@
+#
+#    Reconstruct the pi0 mass peak using ND MC in h5 files
+#
+
 # my code
 import h5Utils
 from core import cut, spectrum
