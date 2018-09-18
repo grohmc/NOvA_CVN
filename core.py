@@ -8,7 +8,7 @@ class spectrum():
         self._var = var(tables)
         self._cut = cut.cut(tables)
 
-    #def fill(self): I can't think of a reason to do it this way...
+    #def fill(self): I can't think of a reason to do it this way... for now
         self._df = self._var[self._cut]
         self._POT = self._tables['spill'].spillpot.sum()
 

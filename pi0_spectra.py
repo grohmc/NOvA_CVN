@@ -79,82 +79,84 @@ def kMass(tables):
 
     # note NaNs can be removed by (df == df)
 
-# A 'loader'
-tables = h5Utils.importh5('neardet_genie_nonswap_genierw_fhc_v08_1535_r00010921_s02_c002_R17-11-14-prod4reco.d_v1_20170322_204739_sim.repid.root.hdf5')
+if __name__ == '__main__':
 
-# Define cuts
-cutTot = kTwoProng & kGammaCut & kContain & kPlaneGap
-cutBkg = cutTot & ~kTruePi0
+    # A 'loader'
+    tables = h5Utils.importh5('neardet_genie_nonswap_genierw_fhc_v08_1535_r00010921_s02_c002_R17-11-14-prod4reco.d_v1_20170322_204739_sim.repid.root.hdf5')
 
-# Make Spectra
-data = spectrum(kMass, cutTot, tables)
-tot = spectrum(kMass, cutTot, tables)
-bkg = spectrum(kMass, cutBkg, tables)
+    # Define cuts
+    cutTot = kTwoProng & kGammaCut & kContain & kPlaneGap
+    cutBkg = cutTot & ~kTruePi0
 
-POT=5E16
+    # Make Spectra
+    data = spectrum(kMass, cutTot, tables)
+    tot = spectrum(kMass, cutTot, tables)
+    bkg = spectrum(kMass, cutBkg, tables)
 
-print('Found ' + str(data.POT()) + ' POT. Scaling to ' + str(POT) + ' POT.')
+    POT=5E16
 
-# Do an analysis!
-# With Spectra
-inttot = tot.integral(POT=POT)
-intbkg = bkg.integral(POT=POT)
-pur = (inttot - intbkg) / inttot
-print('This selection has a pi0 purity of ' + str(pur))
+    print('Found ' + str(data.POT()) + ' POT. Scaling to ' + str(POT) + ' POT.')
 
-# With histograms
-d, bins = data.histogram(8,(0,400), POT=POT)
-m, _    = tot.histogram(8,(0,400), POT=POT)
-b, _    = bkg.histogram(8,(0,400), POT=POT)
+    # Do an analysis!
+    # With Spectra
+    inttot = tot.integral(POT=POT)
+    intbkg = bkg.integral(POT=POT)
+    pur = (inttot - intbkg) / inttot
+    print('This selection has a pi0 purity of ' + str(pur))
 
-def gaussian(x, x0, a, stdev, o):
-    return a * np.exp( - ((x - x0) / stdev) ** 2 / 2) + o
+    # With histograms
+    d, bins = data.histogram(8,(0,400), POT=POT)
+    m, _    = tot.histogram(8,(0,400), POT=POT)
+    b, _    = bkg.histogram(8,(0,400), POT=POT)
 
-centers = (bins[:-1] + bins[1:])/2
+    def gaussian(x, x0, a, stdev, o):
+        return a * np.exp( - ((x - x0) / stdev) ** 2 / 2) + o
 
-# A bug in scipy.optimize.curvefit requires these to be float64s instead of float32s.
-dataparam, datacov = curve_fit(gaussian, centers.astype(np.float64), d, p0=[135., np.max(d), 15., 0])
-mcparam,   mccov   = curve_fit(gaussian, centers.astype(np.float64), m, p0=[135., np.max(m), 15., 0])
+    centers = (bins[:-1] + bins[1:])/2
 
-dataerr = np.sqrt(np.diag(datacov))
-mcerr   = np.sqrt(np.diag(mccov))
+    # A bug in scipy.optimize.curvefit requires these to be float64s instead of float32s.
+    dataparam, datacov = curve_fit(gaussian, centers.astype(np.float64), d, p0=[135., np.max(d), 15., 0])
+    mcparam,   mccov   = curve_fit(gaussian, centers.astype(np.float64), m, p0=[135., np.max(m), 15., 0])
 
-datamu = 'Data $\mu$: ' + '%.2f'%dataparam[0] + '$\pm$' + '%.2f'%dataerr[0]
-datasi = 'Data $\sigma$: ' + '%.2f'%dataparam[2] + '$\pm$' + '%.2f'%dataerr[2]
-mcmu   = 'MC $\mu$: ' + '%.2f'%mcparam[0] + '$\pm$' + '%.2f'%mcerr[0]
-mcsi   = 'MC $\sigma$: ' + '%.2f'%mcparam[2] + '$\pm$' + '%.2f'%mcerr[2]
+    dataerr = np.sqrt(np.diag(datacov))
+    mcerr   = np.sqrt(np.diag(mccov))
 
-# Plots time
-plt.figure(1,figsize=(6,4))
+    datamu = 'Data $\mu$: ' + '%.2f'%dataparam[0] + '$\pm$' + '%.2f'%dataerr[0]
+    datasi = 'Data $\sigma$: ' + '%.2f'%dataparam[2] + '$\pm$' + '%.2f'%dataerr[2]
+    mcmu   = 'MC $\mu$: ' + '%.2f'%mcparam[0] + '$\pm$' + '%.2f'%mcerr[0]
+    mcsi   = 'MC $\sigma$: ' + '%.2f'%mcparam[2] + '$\pm$' + '%.2f'%mcerr[2]
 
-# A histogram with 1 entry in each bin, Use our data as the weights.
-plt.hist(bins[:-1], bins, weights=m, histtype='step', color='xkcd:red', label='$\pi^0$ Signal')
-plt.hist(bins[:-1], bins, weights=b, color='xkcd:dark blue', label='Background')
+    # Plots time
+    plt.figure(1,figsize=(6,4))
 
-# No errors implemented yet, but you could add them here.
-plt.errorbar(centers, d, fmt='ko', label='Fake Data')
+    # A histogram with 1 entry in each bin, Use our data as the weights.
+    plt.hist(bins[:-1], bins, weights=m, histtype='step', color='xkcd:red', label='$\pi^0$ Signal')
+    plt.hist(bins[:-1], bins, weights=b, color='xkcd:dark blue', label='Background')
 
-plt.xlabel('M$_{\gamma\gamma}$')
-plt.ylabel('Events')
+    # No errors implemented yet, but you could add them here.
+    plt.errorbar(centers, d, fmt='ko', label='Fake Data')
 
-# I want the legend for the pi0 signal to be a line instead of an empty box
-handles, labels = plt.gca().get_legend_handles_labels()
-handles[0] = plt.Line2D([], [], c=handles[0].get_edgecolor())
+    plt.xlabel('M$_{\gamma\gamma}$')
+    plt.ylabel('Events')
 
-# I want data listed first in the legend even tho we plotted it last
-handles[0],handles[1],handles[2] = handles[2],handles[0],handles[1]
-labels[0],labels[1],labels[2] = labels[2],labels[0],labels[1]
+    # I want the legend for the pi0 signal to be a line instead of an empty box
+    handles, labels = plt.gca().get_legend_handles_labels()
+    handles[0] = plt.Line2D([], [], c=handles[0].get_edgecolor())
 
-plt.legend(loc='upper right', handles=handles, labels=labels)
+    # I want data listed first in the legend even tho we plotted it last
+    handles[0],handles[1],handles[2] = handles[2],handles[0],handles[1]
+    labels[0],labels[1],labels[2] = labels[2],labels[0],labels[1]
 
-# Print the text for the fit parameters
-plt.text(0.65, 0.6, datamu, color='k', fontsize=12, horizontalalignment='left', verticalalignment='center', \
-        transform=plt.gca().transAxes)
-plt.text(0.65, 0.54, datasi, color='k', fontsize=12, horizontalalignment='left', verticalalignment='center', \
-        transform=plt.gca().transAxes)
-plt.text(0.65, 0.48, mcmu, color='xkcd:red', fontsize=12, horizontalalignment='left', verticalalignment='center', \
-        transform=plt.gca().transAxes)
-plt.text(0.65, 0.43, mcsi, color='xkcd:red', fontsize=12, horizontalalignment='left', verticalalignment='center', \
-        transform=plt.gca().transAxes)
+    plt.legend(loc='upper right', handles=handles, labels=labels)
 
-plt.show()
+    # Print the text for the fit parameters
+    plt.text(0.65, 0.6, datamu, color='k', fontsize=12, horizontalalignment='left', verticalalignment='center', \
+            transform=plt.gca().transAxes)
+    plt.text(0.65, 0.54, datasi, color='k', fontsize=12, horizontalalignment='left', verticalalignment='center', \
+            transform=plt.gca().transAxes)
+    plt.text(0.65, 0.48, mcmu, color='xkcd:red', fontsize=12, horizontalalignment='left', verticalalignment='center', \
+            transform=plt.gca().transAxes)
+    plt.text(0.65, 0.43, mcsi, color='xkcd:red', fontsize=12, horizontalalignment='left', verticalalignment='center', \
+            transform=plt.gca().transAxes)
+
+    plt.show()
