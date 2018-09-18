@@ -9,11 +9,18 @@ from matplotlib import rc
 rc('text', usetex=True)
 
 # Look for vertices with two prongs
-# Note: We don't need to check if there is a vertex like in CAFAna.
-twoprong = cut(lambda tables: (tables['rec.vtx.elastic.fuzzyk'].npng == 2).groupby(h5Utils.KL).agg(np.any))
+# Note: We don't need to explicitly check if there is a vertex like in CAFAna.
+# Note 2: One liners can be done with lambda functions directly in the cut.
+kTwoProng = cut(lambda tables:
+                (tables['rec.vtx.elastic.fuzzyk'].npng == 2).groupby(h5Utils.KL).agg(np.any))
 
 # Look for events where all prongs are photon like
-kGammaCut = cut(lambda tables: (tables['rec.vtx.elastic.fuzzyk.png.cvnpart'].photonid > 0.5).groupby(h5Utils.KL).agg(np.all))
+# multiliners need to be done with def x(tables): blah return blah
+# then x = cut(x)
+def kGammaCut(tables):
+    df = tables['rec.vtx.elastic.fuzzyk.png.cvnpart'].photonid
+    return (df > 0.5).groupby(h5Utils.KL).agg(np.all)
+kGammaCut = cut(kGammaCut)
 
 # Loose containment to ensure some energy reconstruction
 def kContain(tables):
@@ -26,11 +33,13 @@ def kContain(tables):
         (df['vtx.z'] > 50)
 kContain = cut(kContain)
 
+kPlaneGap = cut(lambda x:
+                    (tables['rec.vtx.elastic.fuzzyk.png'].maxplanegap > 1).\
+                    groupby(h5Utils.KL).agg(np.all))
+
 # Does the event actually have a pi0?
-def kTruePi0(tables):
-    df = tables['rec.sand.nue']
-    return (df.npi0 > 0)
-kTruePi0 = cut(kTruePi0)
+kTruePi0 = cut(lambda tables:
+                    tables['rec.sand.nue'].npi0 > 0)
 
 # Computes the invariant mass of two prong events
 def kMass(tables):
@@ -63,16 +72,17 @@ def kMass(tables):
 
     # note NaNs can be removed by (df == df)
 
+# A 'loader'
 tables = h5Utils.importh5('neardet_genie_nonswap_genierw_fhc_v08_1535_r00010921_s02_c002_R17-11-14-prod4reco.d_v1_20170322_204739_sim.repid.root.hdf5')
 
-cutTot = twoprong & kGammaCut & kContain
+cutTot = kTwoProng & kGammaCut & kContain & kPlaneGap
 cutBkg = cutTot & ~kTruePi0
 
 data = spectrum(kMass, cutTot, tables)
 tot = spectrum(kMass, cutTot, tables)
 bkg = spectrum(kMass, cutBkg, tables)
 
-POT=9E20
+POT=5E20
 
 print('Found ' + str(data.POT()) + ' POT. Scaling to ' + str(POT) + ' POT.')
 
@@ -81,17 +91,19 @@ intbkg = bkg.integral(POT=POT)
 pur = (inttot - intbkg) / inttot
 print('This selection has a pi0 purity of ' + str(pur))
 
-d, bins = data.histogram(3,(0,300), POT=POT)
-m, _    = tot.histogram(3,(0,300), POT=POT)
-b, _    = bkg.histogram(3,(0,300), POT=POT)
+d, bins = data.histogram(6,(0,300), POT=POT)
+m, _    = tot.histogram(6,(0,300), POT=POT)
+b, _    = bkg.histogram(6,(0,300), POT=POT)
 
-centers = (bins[:-1] + bins[1:])/2
+# Do an analysis!
+# Maybe calculate the purity using the binning.
 
 plt.figure(1,figsize=(6,4))
 
-plt.hist(centers, bins, weights=m, histtype='step', color='xkcd:red', label='$\pi^0$ Signal')
-plt.hist(centers, bins, weights=b, color='xkcd:dark blue', label='Background')
+plt.hist(bins[:-1], bins, weights=m, histtype='step', color='xkcd:red', label='$\pi^0$ Signal')
+plt.hist(bins[:-1], bins, weights=b, color='xkcd:dark blue', label='Background')
 
+centers = (bins[:-1] + bins[1:])/2
 plt.errorbar(centers, d, fmt='ko', label='Fake Data')
 
 plt.xlabel('M$_{\gamma\gamma}$')
