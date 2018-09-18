@@ -93,7 +93,7 @@ if __name__ == '__main__':
     tot = spectrum(kMass, cutTot, tables)
     bkg = spectrum(kMass, cutBkg, tables)
 
-    POT=5E16
+    POT=5E20
 
     print('Found ' + str(data.POT()) + ' POT. Scaling to ' + str(POT) + ' POT.')
 
