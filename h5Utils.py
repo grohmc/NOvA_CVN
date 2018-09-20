@@ -4,6 +4,8 @@ For importing an h5 file into a table dictionary
 import h5py
 import numpy as np
 import pandas as pd
+from glob import glob
+import os
 
 # How to index the data
 KL = ['run', 'subrun', 'cycle', 'evt', 'subevt']
@@ -46,31 +48,36 @@ def getIndices(tables):
     indices = df.index.values
     return pd.DataFrame(indices,columns=['index'])
 
-'''
+
 def importh5s(h5_path):
     fnames = glob(os.path.join(h5_path, "**.h5"))
-    f=h5py.File(fnames[0],'r')
-    keys = f.keys()
+    f = h5py.File(fnames[0],'r')
+    keys = list(f.keys()).copy()
     f.close()
 
     tables = {}
 
-    for k in keys:
+    for k1 in keys:
         dflist = []
         for fname in fnames:
             f=h5py.File(fname,'r')
 
-            group = f.get(k)
+            group = f.get(k1)
             values = {}
             for k2 in group.keys():
-                dataset = group.get(k2)
-                values[k2] = dataset.value.flatten()
-            dflist.append(pandas.DataFrame(values))
+                if k2 == 'slicemap':
+                    continue
+                dataset = group.get(k2).value
+                if dataset.shape[1] == 1:
+                    dataset = dataset.flatten()
+                else:
+                    dataset = list(dataset)
+                values[k2] = dataset
+            dflist.append(pd.DataFrame(values))
             f.close()
-        df = pandas.concat(dflist)
-        if not k.startswith('spill') :
+        df = pd.concat(dflist)
+        if not (k1.startswith('spill') or k1.startswith('neutrino')):
             df.set_index(KL, inplace=True)
-        tables[k] = df
+        tables[k1] = df
 
     return tables
-'''

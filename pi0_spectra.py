@@ -1,36 +1,43 @@
-#
+###############################################################
 #    Reconstruct the pi0 mass peak using ND MC in h5 files
 #
+#                              @
+#
+###############################################################
 
-# my code
+# Includes
 import h5Utils
 from core import cut, spectrum
-
-# python packages
+# analysis packages
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
-
-# for plotting
+from astropy.stats import poisson_conf_interval
+# For plotting
 import matplotlib.pyplot as plt
 from matplotlib import rc
 rc('text', usetex=True)
 
+###########################################
 # Look for vertices with two prongs
 # Note: We don't need to explicitly check if there is a vertex like in CAFAna.
 # Note 2: One liners can be done with lambda functions directly in the cut.
+###########################################
+
 kTwoProng = cut(lambda tables:
                 (tables['rec.vtx.elastic.fuzzyk'].npng == 2).groupby(h5Utils.KL).agg(np.any))
 
+###########################################
 # Look for events where all prongs are photon like
 # multiliners need to be done with def x(tables): blah return blah
 # then x = cut(x)
+###########################################
 def kGammaCut(tables):
     df = tables['rec.vtx.elastic.fuzzyk.png.cvnpart'].photonid
     return (df > 0.5).groupby(h5Utils.KL).agg(np.all)
 kGammaCut = cut(kGammaCut)
 
-# Loose containment to ensure some energy reconstruction
+# Loose containment
 def kContain(tables):
     df = tables['rec.vtx.elastic']
     return (df['vtx.x'] < 190) & \
@@ -38,18 +45,24 @@ def kContain(tables):
         (df['vtx.y'] < 190) & \
         (df['vtx.y'] > -190) & \
         (df['vtx.z'] < 1200) & \
-        (df['vtx.z'] > 50)
-kContain = cut(kContain)
+        (df['vtx.z'] > 10)
+kContain     = cut(kContain)
 
-kPlaneGap = cut(lambda x:
+kPlaneGap    = cut(lambda tables:
                     (tables['rec.vtx.elastic.fuzzyk.png'].maxplanegap > 1).\
                     groupby(h5Utils.KL).agg(np.all))
 
+kPlaneContig = cut(lambda tables:
+                        (tables['rec.vtx.elastic.fuzzyk.png'].maxplanecont > 4).\
+                        groupby(h5Utils.KL).agg(np.all))
+
 # Does the event actually have a pi0?
-kTruePi0 = cut(lambda tables:
+kTruePi0     = cut(lambda tables:
                     tables['rec.sand.nue'].npi0 > 0)
 
+###########################################
 # Computes the invariant mass of two prong events
+###########################################
 def kMass(tables):
     # Note: We could leave this check out, but you would get a warning about taking
     # the sqrt of negative numbers at the end (it won't crash like cafana).
@@ -82,20 +95,26 @@ def kMass(tables):
 if __name__ == '__main__':
 
     # A 'loader'
-    tables = h5Utils.importh5('neardet_genie_nonswap_genierw_fhc_v08_1535_r00010921_s02_c002_R17-11-14-prod4reco.d_v1_20170322_204739_sim.repid.root.hdf5')
+    #tables = h5Utils.importh5('NDMC/neardet_genie_nonswap_genierw_fhc_v08_1535_r00010921_s02_c002_R17-11-14-prod4reco.d_v1_20170322_204739_sim.repid.root.hdf5')
+    tables = h5Utils.importh5s('NDMC/')
 
     # Define cuts
-    cutTot = kTwoProng & kGammaCut & kContain & kPlaneGap
+    # The cut class knows how to interpret & and ~
+    cutTot = kTwoProng & kGammaCut & kContain & kPlaneContig & kPlaneGap
     cutBkg = cutTot & ~kTruePi0
 
     # Make Spectra
     data = spectrum(kMass, cutTot, tables)
-    tot = spectrum(kMass, cutTot, tables)
-    bkg = spectrum(kMass, cutBkg, tables)
+    tot  = spectrum(kMass, cutTot, tables)
+    bkg  = spectrum(kMass, cutBkg, tables)
 
-    POT=5E20
+    POT = data.POT()
 
     print('Found ' + str(data.POT()) + ' POT. Scaling to ' + str(POT) + ' POT.')
+
+    print('Selected ' + str(data.entries()) + ' events in data.')
+    print('Selected ' + str(tot.entries()) + ' events in MC.')
+    print('Selected ' + str(bkg.entries()) + ' background.')
 
     # Do an analysis!
     # With Spectra
@@ -105,9 +124,11 @@ if __name__ == '__main__':
     print('This selection has a pi0 purity of ' + str(pur))
 
     # With histograms
-    d, bins = data.histogram(8,(0,400), POT=POT)
-    m, _    = tot.histogram(8,(0,400), POT=POT)
-    b, _    = bkg.histogram(8,(0,400), POT=POT)
+    nbins = 8
+    range = (0,400)
+    d, bins = data.histogram(nbins,range, POT=POT)
+    m, _    = tot.histogram(nbins,range, POT=POT)
+    b, _    = bkg.histogram(nbins,range, POT=POT)
 
     def gaussian(x, x0, a, stdev, o):
         return a * np.exp( - ((x - x0) / stdev) ** 2 / 2) + o
@@ -121,11 +142,12 @@ if __name__ == '__main__':
     dataerr = np.sqrt(np.diag(datacov))
     mcerr   = np.sqrt(np.diag(mccov))
 
-    datamu = 'Data $\mu$: ' + '%.2f'%dataparam[0] + '$\pm$' + '%.2f'%dataerr[0]
-    datasi = 'Data $\sigma$: ' + '%.2f'%dataparam[2] + '$\pm$' + '%.2f'%dataerr[2]
-    mcmu   = 'MC $\mu$: ' + '%.2f'%mcparam[0] + '$\pm$' + '%.2f'%mcerr[0]
-    mcsi   = 'MC $\sigma$: ' + '%.2f'%mcparam[2] + '$\pm$' + '%.2f'%mcerr[2]
+    datamu = 'Data $\mu$: ' + '%.1f'%dataparam[0] + '$\pm$' + '%.1f'%dataerr[0]
+    datasi = 'Data $\sigma$: ' + '%.1f'%dataparam[2] + '$\pm$' + '%.1f'%dataerr[2]
+    mcmu   = 'MC $\mu$: ' + '%.1f'%mcparam[0] + '$\pm$' + '%.1f'%mcerr[0]
+    mcsi   = 'MC $\sigma$: ' + '%.1f'%mcparam[2] + '$\pm$' + '%.1f'%mcerr[2]
 
+    # <codecell>
     # Plots time
     plt.figure(1,figsize=(6,4))
 
@@ -133,8 +155,9 @@ if __name__ == '__main__':
     plt.hist(bins[:-1], bins, weights=m, histtype='step', color='xkcd:red', label='$\pi^0$ Signal')
     plt.hist(bins[:-1], bins, weights=b, color='xkcd:dark blue', label='Background')
 
-    # No errors implemented yet, but you could add them here.
-    plt.errorbar(centers, d, fmt='ko', label='Fake Data')
+    # Compute some errors
+    derr = poisson_conf_interval(d,'frequentist-confidence')
+    plt.errorbar(centers, d, yerr=[d-derr[0],derr[1]-d], fmt='ko', label='Fake Data')
 
     plt.xlabel('M$_{\gamma\gamma}$')
     plt.ylabel('Events')
@@ -150,13 +173,13 @@ if __name__ == '__main__':
     plt.legend(loc='upper right', handles=handles, labels=labels)
 
     # Print the text for the fit parameters
-    plt.text(0.65, 0.6, datamu, color='k', fontsize=12, horizontalalignment='left', verticalalignment='center', \
+    plt.text(0.7, 0.65, datamu, color='k', fontsize=12, horizontalalignment='left', verticalalignment='center', \
             transform=plt.gca().transAxes)
-    plt.text(0.65, 0.54, datasi, color='k', fontsize=12, horizontalalignment='left', verticalalignment='center', \
+    plt.text(0.7, 0.59, datasi, color='k', fontsize=12, horizontalalignment='left', verticalalignment='center', \
             transform=plt.gca().transAxes)
-    plt.text(0.65, 0.48, mcmu, color='xkcd:red', fontsize=12, horizontalalignment='left', verticalalignment='center', \
+    plt.text(0.7, 0.53, mcmu, color='xkcd:red', fontsize=12, horizontalalignment='left', verticalalignment='center', \
             transform=plt.gca().transAxes)
-    plt.text(0.65, 0.43, mcsi, color='xkcd:red', fontsize=12, horizontalalignment='left', verticalalignment='center', \
+    plt.text(0.7, 0.48, mcsi, color='xkcd:red', fontsize=12, horizontalalignment='left', verticalalignment='center', \
             transform=plt.gca().transAxes)
 
     plt.show()
